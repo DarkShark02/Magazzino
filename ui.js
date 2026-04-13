@@ -103,7 +103,7 @@ function renderAdd(){
         .slice(0, 6);
 
       box.innerHTML = matches.map(p => `
-        <div class="suggestItem" onclick="selectAdd('${p.nome}','${p.scadenza}')">
+        <div class="suggestItem" onclick="selectRemove('${encodeURIComponent(JSON.stringify(p))}')"">
           ${p.nome} — ${p.scadenza}
         </div>
       `).join("");
@@ -130,7 +130,10 @@ function saveAdd(){
   const id=createId(nome,scadenza);
 
   getProdotti(p=>{
-    let ex=p.find(x=>x.id===id);
+    let ex = p.find(x =>
+        normalize(x.nome) === normalize(nome) &&
+        x.scadenza === scadenza
+    );
 
     if(ex) ex.quantita+=qty;
     else ex={id,nome,quantita:qty,scadenza};
@@ -180,7 +183,7 @@ function renderRemove(){
         .slice(0, 6);
 
       box.innerHTML = matches.map(p => `
-        <div class="suggestItem" onclick="selectRemove('${p.nome}','${p.scadenza}')">
+        <div class="suggestItem" onclick="selectRemove('${encodeURIComponent(JSON.stringify(p))}')"">
           ${p.nome} — ${p.scadenza}
         </div>
       `).join("");
@@ -204,7 +207,10 @@ function saveRemove(){
 
   getProdotti(p=>{
 
-    let prod=p.find(x=>x.id===id);
+    let prod = p.find(x =>
+        normalize(x.nome) === normalize(nome) &&
+        x.scadenza === date
+    );
 
     if(!prod){
       alert("Prodotto non trovato");
@@ -228,6 +234,8 @@ function saveRemove(){
 
 function renderList() {
   getProdotti(p => {
+
+    p = p.sort((a, b) => new Date(a.scadenza) - new Date(b.scadenza));
 
     document.getElementById("app").innerHTML = `
       <div class="container">
@@ -281,13 +289,36 @@ function edit(id){
   });
 }
 
-function saveEdit(id){
-  const nome=document.getElementById("name").value;
-  const qty=parseInt(document.getElementById("qty").value);
-  const scadenza=document.getElementById("date").value;
+function saveEdit(oldId){
 
-  saveProdotto({id,nome,quantita:qty,scadenza});
-  renderView("list");
+  const nome = document.getElementById("name").value;
+  const qty = parseInt(document.getElementById("qty").value);
+  const scadenza = document.getElementById("date").value;
+
+  const newId = createId(nome, scadenza);
+
+  getProdotti(p => {
+
+    const old = p.find(x => x.id === oldId);
+    if(!old) return;
+
+    const updated = {
+      id: newId,
+      nome,
+      quantita: qty,
+      scadenza
+    };
+
+    const tx = db.transaction("prodotti", "readwrite");
+
+    // 🔥 elimina vecchio lotto
+    tx.objectStore("prodotti").delete(oldId);
+
+    // 🔥 inserisce nuovo lotto
+    tx.objectStore("prodotti").put(updated);
+
+    renderView("list");
+  });
 }
 
 /* ---------------- SCADENZE ---------------- */
