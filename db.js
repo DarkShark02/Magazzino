@@ -12,7 +12,6 @@ request.onupgradeneeded = (e) => {
 request.onsuccess = (e) => {
   db = e.target.result;
 
-  // 👉 controllo magazzino unico
   getMagazzini(list => {
     if (list.length === 0) {
       const nome = prompt("Crea il tuo magazzino");
@@ -26,10 +25,11 @@ request.onsuccess = (e) => {
   });
 };
 
-// MAGAZZINI
+/* ---------------- MAGAZZINI ---------------- */
+
 function addMagazzino(nome) {
   const tx = db.transaction("magazzini", "readwrite");
-  tx.objectStore("magazzini").add({
+  tx.objectStore("magazzini").put({
     id: "default",
     nome
   });
@@ -41,8 +41,14 @@ function getMagazzini(cb) {
   req.onsuccess = () => cb(req.result);
 }
 
-// PRODOTTI
+/* ---------------- PRODOTTI ---------------- */
+
 function saveProdotto(p) {
+  if (!p || !p.id) {
+    console.error("Prodotto non valido", p);
+    return;
+  }
+
   const tx = db.transaction("prodotti", "readwrite");
   tx.objectStore("prodotti").put(p);
 }

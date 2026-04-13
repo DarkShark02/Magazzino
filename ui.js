@@ -1,11 +1,27 @@
 function renderView(v){
-  if(v==="home") renderHome();
-  if(v==="magazzino") renderMagazzino();
-  if(v==="add") renderAdd();
-  if(v==="remove") renderRemove();
-  if(v==="list") renderList();
-  if(v==="edit") renderEdit();
-  if(v==="scadenze") renderScadenze();
+  const map = {
+    home: renderHome,
+    magazzino: renderMagazzino,
+    add: renderAdd,
+    remove: renderRemove,
+    list: renderList,
+    edit: edit,
+    scadenze: renderScadenze
+  };
+
+  if(map[v]) map[v]();
+}
+
+/* ---------------- HELPERS ---------------- */
+
+function formatDate(d){
+  if(!d) return "";
+  const [y,m,day] = d.split("-");
+  return `${day}/${m}/${y}`;
+}
+
+function isNearExpiry(date){
+  return daysTo(date) <= 30;
 }
 
 /* ---------------- HOME ---------------- */
@@ -29,14 +45,14 @@ function renderHome(){
 }
 
 function createMagazzino(){
-  const n=prompt("Nome");
+  const n = prompt("Nome magazzino");
   if(!n) return;
   addMagazzino(n);
   renderView("home");
 }
 
 function openMagazzino(id,nome){
-  currentMagazzino={id,nome};
+  currentMagazzino = {id,nome};
   renderView("magazzino");
 }
 
@@ -45,19 +61,19 @@ function openMagazzino(id,nome){
 function renderMagazzino(){
   getProdotti(p=>{
 
-    const exp = p.filter(x=>daysTo(x.scadenza)<=30);
+    const exp = p.filter(x => isNearExpiry(x.scadenza));
 
     document.getElementById("app").innerHTML=`
       <div class="container">
 
         <h1>🥩 ${currentMagazzino.nome}</h1>
 
-        ${exp.length ? `<div class="alert">⚠️ Scadenze vicine</div>` : ""}
+        ${exp.length ? `<div class="alert">⚠️ Prodotti in scadenza</div>` : ""}
 
-        <button class="btn" onclick="renderAdd()">➕ Inserisci Prodotto</button>
-        <button class="btn-danger" onclick="renderRemove()">➖ Rimuovi Prodotto</button>
-        <button class="btn-secondary" onclick="renderList()">📦 Lista Prodotti</button>
-        <button class="btn-secondary" onclick="renderScadenze()">📅 Scadenze Prossime</button>
+        <button class="btn" onclick="renderAdd()">➕ Inserisci</button>
+        <button class="btn-danger" onclick="renderRemove()">➖ Rimuovi</button>
+        <button class="btn-secondary" onclick="renderList()">📦 Lista</button>
+        <button class="btn-secondary" onclick="renderScadenze()">📅 Scadenze</button>
 
       </div>
     `;
@@ -86,13 +102,12 @@ function renderAdd(){
       </div>
     `;
 
-    const input=document.getElementById("name");
-    const box=document.getElementById("suggest");
+    const input = document.getElementById("name");
+    const box = document.getElementById("suggest");
 
     input.addEventListener("input",()=>{
 
-      const q=normalize(input.value);
-
+      const q = normalize(input.value);
       if(!q){
         box.innerHTML="";
         return;
@@ -100,11 +115,12 @@ function renderAdd(){
 
       const matches = prodotti
         .filter(p => normalize(p.nome).includes(q))
-        .slice(0, 6);
+        .slice(0,6);
 
-      box.innerHTML = matches.map(p => `
-        <div class="suggestItem" onclick="selectRemove('${encodeURIComponent(JSON.stringify(p))}')"">
-          ${p.nome} — ${p.scadenza}
+      box.innerHTML = matches.map(p=>`
+        <div class="suggestItem"
+          onclick="selectAdd('${p.nome}','${p.scadenza}')">
+          ${p.nome} — ${formatDate(p.scadenza)}
         </div>
       `).join("");
     });
@@ -118,27 +134,28 @@ function selectAdd(nome, scadenza){
 }
 
 function saveAdd(){
-  const nome=document.getElementById("name").value;
-  const qty=parseInt(document.getElementById("qty").value);
-  const scadenza=document.getElementById("date").value;
 
-  if(!nome||!qty||!scadenza) return alert("Obbligatorio");
+  const nome = document.getElementById("name").value;
+  const qty = parseInt(document.getElementById("qty").value);
+  const scadenza = document.getElementById("date").value;
 
-  if(new Date(scadenza)<new Date(todayISO()))
-    return alert("Data non valida");
+  if(!nome || !qty || !scadenza) return alert("Obbligatorio");
 
-  const id=createId(nome,scadenza);
+  const id = crypto.randomUUID();
 
   getProdotti(p=>{
+
     let ex = p.find(x =>
-        normalize(x.nome) === normalize(nome) &&
-        x.scadenza === scadenza
+      x.nome === nome && x.scadenza === scadenza
     );
 
-    if(ex) ex.quantita+=qty;
-    else ex={id,nome,quantita:qty,scadenza};
+    if(ex){
+      ex.quantita += qty;
+      saveProdotto(ex);
+    } else {
+      saveProdotto({id, nome, quantita: qty, scadenza});
+    }
 
-    saveProdotto(ex);
     renderView("magazzino");
   });
 }
@@ -152,9 +169,9 @@ function renderRemove(){
     document.getElementById("app").innerHTML=`
       <div class="container">
 
-        <h2>➖ Rimozione prodotto</h2>
+        <h2>➖ Rimozione</h2>
 
-        <input id="name" placeholder="Nome prodotto" autocomplete="off">
+        <input id="name" placeholder="Nome prodotto">
         <div id="suggest" class="suggestBox"></div>
 
         <input id="date" type="date">
@@ -166,13 +183,12 @@ function renderRemove(){
       </div>
     `;
 
-    const input=document.getElementById("name");
-    const box=document.getElementById("suggest");
+    const input = document.getElementById("name");
+    const box = document.getElementById("suggest");
 
     input.addEventListener("input",()=>{
 
-      const q=normalize(input.value);
-
+      const q = normalize(input.value);
       if(!q){
         box.innerHTML="";
         return;
@@ -180,11 +196,12 @@ function renderRemove(){
 
       const matches = prodotti
         .filter(p => normalize(p.nome).includes(q))
-        .slice(0, 6);
+        .slice(0,6);
 
-      box.innerHTML = matches.map(p => `
-        <div class="suggestItem" onclick="selectRemove('${encodeURIComponent(JSON.stringify(p))}')"">
-          ${p.nome} — ${p.scadenza}
+      box.innerHTML = matches.map(p=>`
+        <div class="suggestItem"
+          onclick="selectRemove('${p.nome}','${p.scadenza}')">
+          ${p.nome} — ${formatDate(p.scadenza)}
         </div>
       `).join("");
     });
@@ -199,17 +216,14 @@ function selectRemove(nome, scadenza){
 
 function saveRemove(){
 
-  const nome=document.getElementById("name").value;
-  const date=document.getElementById("date").value;
-  const qty=parseInt(document.getElementById("qty").value);
-
-  const id=createId(nome,date);
+  const nome = document.getElementById("name").value;
+  const date = document.getElementById("date").value;
+  const qty = parseInt(document.getElementById("qty").value);
 
   getProdotti(p=>{
 
     let prod = p.find(x =>
-        normalize(x.nome) === normalize(nome) &&
-        x.scadenza === date
+      x.nome === nome && x.scadenza === date
     );
 
     if(!prod){
@@ -220,8 +234,8 @@ function saveRemove(){
     prod.quantita -= qty;
 
     if(prod.quantita <= 0){
-      const tx=db.transaction("prodotti","readwrite");
-      tx.objectStore("prodotti").delete(id);
+      const tx = db.transaction("prodotti","readwrite");
+      tx.objectStore("prodotti").delete(prod.id);
     } else {
       saveProdotto(prod);
     }
@@ -230,16 +244,18 @@ function saveRemove(){
   });
 }
 
-/* ---------------- LISTA + EDIT ---------------- */
+/* ---------------- LISTA ---------------- */
 
-function renderList() {
-  getProdotti(p => {
+function renderList(){
 
-    p = p.sort((a, b) => new Date(a.scadenza) - new Date(b.scadenza));
+  getProdotti(p=>{
 
-    document.getElementById("app").innerHTML = `
+    p = p.sort((a,b)=> new Date(a.scadenza)-new Date(b.scadenza));
+
+    document.getElementById("app").innerHTML=`
       <div class="container">
-        <h2>📦 Prodotti</h2>
+
+        <h2>📦 Lista prodotti</h2>
 
         <div class="productHeader">
           <div class="col">Nome</div>
@@ -248,30 +264,31 @@ function renderList() {
           <div class="col"></div>
         </div>
 
-        ${p.map(x => `
+        ${p.map(x=>`
           <div class="productRow">
             <div class="col">${x.nome}</div>
-            <div class="col">${x.scadenza}</div>
+            <div class="col">${formatDate(x.scadenza)}</div>
             <div class="col">${x.quantita}</div>
 
             <div class="col right">
               <button class="editBtn" onclick="edit('${x.id}')">✏️</button>
+              <button class="editBtn" onclick="deleteProd('${x.id}')">🗑️</button>
             </div>
           </div>
         `).join("")}
 
-        <button class="btn-secondary" onclick="renderView('magazzino')">
-          ← Indietro
-        </button>
+        <button class="btn-secondary" onclick="renderView('magazzino')">← Indietro</button>
       </div>
     `;
   });
 }
 
+/* ---------------- EDIT ---------------- */
+
 function edit(id){
 
   getProdotti(p=>{
-    const prod=p.find(x=>x.id===id);
+    const prod = p.find(x=>x.id===id);
 
     document.getElementById("app").innerHTML=`
       <div class="container">
@@ -279,7 +296,7 @@ function edit(id){
         <h2>✏️ Modifica</h2>
 
         <input id="name" value="${prod.nome}">
-        <input id="qty" type="number" value="${prod.quantita}" readonly>
+        <input id="qty" type="number" value="${prod.quantita}">
         <input id="date" type="date" value="${prod.scadenza}">
 
         <button class="btn" onclick="saveEdit('${id}')">SALVA</button>
@@ -295,38 +312,41 @@ function saveEdit(oldId){
   const qty = parseInt(document.getElementById("qty").value);
   const scadenza = document.getElementById("date").value;
 
-  const newId = createId(nome, scadenza);
+  getProdotti(p=>{
 
-  getProdotti(p => {
+    const prod = p.find(x=>x.id===oldId);
+    if(!prod) return;
 
-    const old = p.find(x => x.id === oldId);
-    if(!old) return;
+    prod.nome = nome;
+    prod.quantita = qty;
+    prod.scadenza = scadenza;
 
-    const updated = {
-      id: newId,
-      nome,
-      quantita: qty,
-      scadenza
-    };
-
-    const tx = db.transaction("prodotti", "readwrite");
-
-    // 🔥 elimina vecchio lotto
-    tx.objectStore("prodotti").delete(oldId);
-
-    // 🔥 inserisce nuovo lotto
-    tx.objectStore("prodotti").put(updated);
+    saveProdotto(prod);
 
     renderView("list");
   });
 }
 
+function deleteProd(id){
+
+  if(!confirm("Sei sicuro di eliminare questo prodotto?"))
+    return;
+
+  const tx = db.transaction("prodotti","readwrite");
+  tx.objectStore("prodotti").delete(id);
+
+  tx.oncomplete = () => {
+    renderView("list");
+  };
+}
+
 /* ---------------- SCADENZE ---------------- */
 
 function renderScadenze(){
+
   getProdotti(p=>{
 
-    const list=p.filter(x=>daysTo(x.scadenza)<=30);
+    const list = p.filter(x => isNearExpiry(x.scadenza));
 
     document.getElementById("app").innerHTML=`
       <div class="container">
@@ -335,7 +355,7 @@ function renderScadenze(){
 
         ${list.map(x=>`
           <div class="card danger">
-            ${x.nome} - ${x.scadenza}
+            ${x.nome} — ${formatDate(x.scadenza)}
           </div>
         `).join("")}
 
