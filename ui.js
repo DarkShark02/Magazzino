@@ -296,7 +296,7 @@ function edit(id){
         <h2>✏️ Modifica</h2>
 
         <input id="name" value="${prod.nome}">
-        <input id="qty" type="number" value="${prod.quantita}">
+        <input id="qty" type="number" value="${prod.quantita}" readonly>
         <input id="date" type="date" value="${prod.scadenza}">
 
         <button class="btn" onclick="saveEdit('${id}')">SALVA</button>
@@ -346,20 +346,52 @@ function renderScadenze(){
 
   getProdotti(p=>{
 
-    const list = p.filter(x => isNearExpiry(x.scadenza));
+    const today = new Date(todayISO());
+
+    const scaduti = p
+      .filter(x => new Date(x.scadenza) < today)
+      .sort((a,b)=> new Date(a.scadenza) - new Date(b.scadenza));
+
+    const prossimi = p
+      .filter(x => {
+        const d = new Date(x.scadenza);
+        return d >= today && daysTo(x.scadenza) <= 30;
+      })
+      .sort((a,b)=> new Date(a.scadenza) - new Date(b.scadenza));
 
     document.getElementById("app").innerHTML=`
       <div class="container">
 
         <h2>📅 Scadenze</h2>
 
-        ${list.map(x=>`
-          <div class="card danger">
-            ${x.nome} — ${formatDate(x.scadenza)}
-          </div>
-        `).join("")}
+        ${prossimi.length ? `
+          <h3 style="color:#ffd166;">🟡 In scadenza</h3>
 
-        <button class="btn-secondary" onclick="renderView('magazzino')">← Indietro</button>
+          ${prossimi.map(x=>`
+            <div class="card">
+              ${x.nome} — ${formatDate(x.scadenza)}
+            </div>
+          `).join("")}
+        ` : ""}
+
+        ${scaduti.length ? `
+          <h3 style="color:#ff4d4d;">🔴 Scaduti</h3>
+
+          ${scaduti.map(x=>`
+            <div class="card danger">
+              ${x.nome} — ${formatDate(x.scadenza)}
+            </div>
+          `).join("")}
+        ` : ""}
+
+        ${!scaduti.length && !prossimi.length ? `
+          <div class="card">✅ Nessuna scadenza vicina</div>
+        ` : ""}
+
+        <button class="btn-secondary" onclick="renderView('magazzino')">
+          ← Indietro
+        </button>
+
       </div>
     `;
   });
