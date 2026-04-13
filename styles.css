@@ -1,0 +1,165 @@
+body{
+  font-family: system-ui, -apple-system, Arial;
+  background: linear-gradient(135deg, #f6efe3, #e7d2b0);
+  margin:0;
+  padding:14px;
+  color:#3b2a1a;
+}
+
+/* CONTAINER */
+.container{
+  max-width:420px;
+  margin:auto;
+}
+
+/* TITOLI */
+h1,h2{
+  color:#4a2f1a;
+  letter-spacing:0.3px;
+}
+
+/* INPUT */
+input, select{
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  border-radius:12px;
+  border:1px solid #c8a676;
+  font-size:15px;
+  box-sizing:border-box;
+  background:#fffaf3;
+  outline:none;
+  transition:0.2s;
+}
+
+input:focus{
+  border-color:#8b5a2b;
+  box-shadow:0 0 0 3px rgba(139,90,43,0.15);
+}
+
+/* BUTTON BASE */
+button{
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  border-radius:14px;
+  border:none;
+  font-weight:600;
+  font-size:15px;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+/* BUTTONS */
+.btn{
+  background: linear-gradient(135deg, #8b5a2b, #6f4320);
+  color:white;
+  box-shadow:0 4px 10px rgba(0,0,0,0.12);
+}
+
+.btn:hover{
+  transform: translateY(-1px);
+}
+
+.btn-danger{
+  background: linear-gradient(135deg, #b22222, #8e1a1a);
+  color:white;
+}
+
+.btn-secondary{
+  background:#e6d2b5;
+  color:#3b2a1a;
+}
+
+/* CARD */
+.card{
+  background: linear-gradient(135deg, #fff3e0, #f8e6c8);
+  padding:12px;
+  margin:6px 0;
+  border-radius:14px;
+  font-size:14px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* ALERT */
+.alert{
+  background: linear-gradient(135deg, #ffd7a8, #ffb870);
+  padding:12px;
+  border-radius:14px;
+  font-weight:600;
+  box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* SCADENZA URGENTE */
+.danger{
+  border-left:5px solid #c62828;
+}
+
+/* AUTOCOMPLETE */
+.suggestBox{
+  background:white;
+  border:1px solid #c8a676;
+  border-radius:12px;
+  margin-top:-4px;
+  overflow:hidden;
+  box-shadow:0 6px 16px rgba(0,0,0,0.12);
+}
+
+.suggestItem{
+  padding:10px;
+  font-size:14px;
+  cursor:pointer;
+  border-bottom:1px solid #f1e4d0;
+}
+
+.suggestItem:hover{
+  background:#f3e3c6;
+}
+
+/* LISTA HEADER */
+.productHeader{
+  display:flex;
+  font-weight:700;
+  padding:10px 4px;
+  border-bottom:2px solid #c8a676;
+  font-size:13px;
+  opacity:0.9;
+}
+
+/* RIGA PRODOTTO */
+.productRow{
+  display:flex;
+  align-items:center;
+  padding:12px 4px;
+  border-bottom:1px solid #e3caa0;
+  font-size:14px;
+  background:rgba(255,255,255,0.35);
+  border-radius:10px;
+  margin-bottom:6px;
+}
+
+/* COLONNE */
+.col{
+  flex:1;
+}
+
+/* ALLINEAMENTO */
+.right{
+  display:flex;
+  justify-content:flex-end;
+}
+
+/* BOTTONE MODIFICA */
+.editBtn{
+  font-size:18px;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  opacity:0.7;
+  transition:0.2s;
+}
+
+.editBtn:hover{
+  opacity:1;
+  transform:scale(1.1);
+}
